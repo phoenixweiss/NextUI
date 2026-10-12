@@ -1156,7 +1156,7 @@ int main(int argc, char *argv[])
 
         mainItems.push_back(new MenuItem{ListItemType::Generic, "About", "", {}, {}, nullptr, nullptr, DeferToSubmenu, aboutMenu});
 
-        ctx.menu = new MenuList(MenuItemType::List, "Main", mainItems);
+        ctx.menu = new MenuList(MenuItemType::Main, "Main", mainItems);
 
         SDL_Surface* bgbmp = IMG_Load(SDCARD_PATH "/bg.png");
         SDL_Surface* convertedbg = SDL_ConvertSurfaceFormat(bgbmp, SDL_PIXELFORMAT_RGB565, 0);
