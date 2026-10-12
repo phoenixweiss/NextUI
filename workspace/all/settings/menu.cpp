@@ -405,11 +405,12 @@ bool MenuList::selectByName(const std::string &name)
     //LOG_info("Found element %s (%d) at pos %d\n", name.c_str(), scope.selected - scope.start, toSelect);
     if (toSelect >= 0)
     {
-        performLayout((SDL_Rect){0, 0, FIXED_WIDTH, FIXED_HEIGHT});
-        while(toSelect > 0) {
-            selectNext();
-            toSelect--;
-        }
+        // Keep the viewport calculated for the content area, not the full screen.
+        scope.selected = toSelect;
+        scope.start = std::max(0, std::min(scope.start, toSelect));
+        if (toSelect >= scope.start + scope.visible_rows)
+            scope.start = toSelect - scope.visible_rows + 1;
+        scope.end = std::min(scope.count, scope.start + scope.visible_rows);
         return true;
     }
     return false;
@@ -441,6 +442,17 @@ InputReactionHint MenuList::handleInput(int &dirty, int &quit)
     }
 
     ReadLock r(itemLock);
+    if (page_navigation && scope.count > scope.max_visible_options &&
+        (PAD_justRepeated(BTN_L1) || PAD_justRepeated(BTN_R1))) {
+        const bool forward = PAD_justRepeated(BTN_R1);
+        const int steps = std::min(scope.max_visible_options,
+            forward ? scope.count - scope.selected - 1 : scope.selected);
+        for (int i = 0; i < steps; ++i) {
+            if (forward) selectNext(); else selectPrev();
+        }
+        dirty = 1;
+        return NoOp;
+    }
     InputReactionHint handled = items.at(scope.selected)->handleInput(dirty);
     if(handled == ResetAllItems) {
         resetAllItems();

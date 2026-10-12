@@ -30,6 +30,36 @@ extern "C"
 
 #define BUSYBOX_STOCK_VERSION "1.27.2"
 
+// A confirmation list keeps browsing separate from changing a setting.
+static TextInputMenuItem *choiceItem(const std::string &name, const std::string &desc,
+    const std::vector<std::string> &values, const std::vector<std::string> &labels,
+    std::function<std::string()> get, std::function<void(const std::string&)> set,
+    ValueResetCallback reset = nullptr)
+{
+    std::vector<AbstractMenuItem*> rows;
+    for (size_t i = 0; i < values.size(); ++i) {
+        const auto value = values[i];
+        rows.push_back(new MenuItem{ListItemType::Button, labels[i], "",
+            [set, value](AbstractMenuItem&) { set(value); return Exit; }});
+    }
+    auto menu = new MenuList(MenuItemType::Fixed, name, std::move(rows));
+    menu->enablePageNavigation();
+    return new TextInputMenuItem(name, desc,
+        [get, values, labels]() -> std::any {
+            const auto current = get();
+            for (size_t i = 0; i < values.size(); ++i)
+                if (values[i] == current) return labels[i];
+            return current;
+        },
+        [get, values, labels](AbstractMenuItem &item) {
+            const auto current = get();
+            for (size_t i = 0; i < values.size(); ++i)
+                if (values[i] == current) item.getSubMenu()->selectByName(labels[i]);
+            item.defer(true);
+            return NoOp;
+        }, menu, reset);
+}
+
 static int appQuit = false;
 static bool appSuspend = false;
 
@@ -677,10 +707,10 @@ int main(int argc, char *argv[])
             { return TIME_getNetworkTimeSync(); }, [](const std::any &value)
             { TIME_setNetworkTimeSync(std::any_cast<bool>(value)); },
             []() { TIME_setNetworkTimeSync(false);}}, // default from stock
-            new MenuItem{ListItemType::Generic, "Time zone", "Your time zone", tz_values, tz_labels, []() -> std::any
-            { return std::string(TIME_getCurrentTimezone()); }, [](const std::any &value)
-            { TIME_setCurrentTimezone(std::any_cast<std::string>(value).c_str()); },
-            []() { TIME_setCurrentTimezone("Asia/Shanghai");}}, // default from Stock
+            choiceItem("Time zone", "Your time zone",
+                tz_labels, tz_labels, []() { return std::string(TIME_getCurrentTimezone()); },
+                [](const std::string &value) { TIME_setCurrentTimezone(value.c_str()); },
+                []() { TIME_setCurrentTimezone("Asia/Shanghai"); }),
             new MenuItem{ListItemType::Generic, "Save format", "The save format to use.\nMinUI: Game.gba.sav, Retroarch: Game.srm, Generic: Game.sav",
             {(int)SAVE_FORMAT_SAV, (int)SAVE_FORMAT_SRM, (int)SAVE_FORMAT_SRM_UNCOMPRESSED, (int)SAVE_FORMAT_GEN},
             {"MinUI (default)", "Retroarch (compressed)", "Retroarch (uncompressed)", "Generic"}, []() -> std::any

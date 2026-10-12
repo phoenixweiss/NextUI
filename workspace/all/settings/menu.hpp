@@ -276,8 +276,8 @@ class TextInputMenuItem : public AbstractMenuItem
 public:
     TextInputMenuItem(const std::string &name, const std::string &desc,
                      ValueGetCallback labelGetter, MenuListCallback on_confirm,
-                     MenuList *submenu)
-        : AbstractMenuItem(ListItemType::Generic, name, desc, labelGetter, nullptr, nullptr, on_confirm, submenu),
+                     MenuList *submenu, ValueResetCallback on_reset = nullptr)
+        : AbstractMenuItem(ListItemType::Generic, name, desc, labelGetter, nullptr, on_reset, on_confirm, submenu),
           keyboardSubmenu(submenu) {}
 
     const std::any getValue() const override {
@@ -320,6 +320,7 @@ protected:
     MenuListCallback on_change;
     MenuListCallback on_confirm;
 
+    bool page_navigation = false;
     std::shared_mutex itemLock;
 
 public:
@@ -332,6 +333,7 @@ public:
     static bool isOverlayVisible();
 
     void performLayout(const SDL_Rect &dst);
+    void enablePageNavigation() { page_navigation = true; }
     bool selectNext();
     bool selectPrev();
     std::string getSelectedItemName() const;
