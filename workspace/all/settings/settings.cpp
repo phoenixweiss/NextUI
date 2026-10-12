@@ -1196,7 +1196,7 @@ const std::vector<std::string> ra_sort_labels = {
 
         mainItems.push_back(new MenuItem{ListItemType::Generic, I18N_translate("About"), "", {}, {}, nullptr, nullptr, DeferToSubmenu, aboutMenu});
 
-        ctx.menu = new MenuList(MenuItemType::List, I18N_translate("Main"), mainItems);
+        ctx.menu = new MenuList(MenuItemType::Main, I18N_translate("Main"), mainItems);
 
         SDL_Surface* bgbmp = IMG_Load(SDCARD_PATH "/bg.png");
         SDL_Surface* convertedbg = SDL_ConvertSurfaceFormat(bgbmp, SDL_PIXELFORMAT_RGB565, 0);

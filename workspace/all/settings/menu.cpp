@@ -504,7 +504,7 @@ SDL_Rect MenuList::itemSizeHint(const AbstractMenuItem &item)
 {
     if (type == MenuItemType::Fixed)
     {
-        return {0, 0, 0, SCALE1(PILL_SIZE)};
+        return {0, 0, 0, SCALE1(BUTTON_SIZE)};
     }
     else if (type == MenuItemType::List)
     {
@@ -512,7 +512,7 @@ SDL_Rect MenuList::itemSizeHint(const AbstractMenuItem &item)
         int w = 0;
         TTF_SizeUTF8(font.small, item.getName().c_str(), &w, NULL);
         w += SCALE1(OPTION_PADDING * 2);
-        return {0, 0, w, SCALE1(PILL_SIZE)};
+        return {0, 0, w, SCALE1(BUTTON_SIZE)};
     }
     else if (type == MenuItemType::Input || type == MenuItemType::Var)
     {
@@ -540,7 +540,7 @@ SDL_Rect MenuList::itemSizeHint(const AbstractMenuItem &item)
             w = lw + mrw;
         }
         w += SCALE1(OPTION_PADDING * 4);
-        return {0, 0, w, SCALE1(PILL_SIZE)};
+        return {0, 0, w, SCALE1(BUTTON_SIZE)};
     }
     else if (type == MenuItemType::Main)
     {
