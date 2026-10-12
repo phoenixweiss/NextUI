@@ -710,10 +710,10 @@ const std::vector<std::string> ra_sort_labels = {
             { return TIME_getNetworkTimeSync(); }, [](const std::any &value)
             { TIME_setNetworkTimeSync(std::any_cast<bool>(value)); },
             []() { TIME_setNetworkTimeSync(false);}}, // default from stock
-            new MenuItem{ListItemType::Generic, I18N_translate("Time zone"), I18N_translate("Your time zone"), tz_values, tz_labels, []() -> std::any
-            { return std::string(TIME_getCurrentTimezone()); }, [](const std::any &value)
-            { TIME_setCurrentTimezone(std::any_cast<std::string>(value).c_str()); },
-            []() { TIME_setCurrentTimezone("Asia/Shanghai");}}, // default from Stock
+            choiceItem(I18N_translate("Time zone"), I18N_translate("Your time zone"),
+                tz_labels, tz_labels, []() { return std::string(TIME_getCurrentTimezone()); },
+                [](const std::string &value) { TIME_setCurrentTimezone(value.c_str()); },
+                []() { TIME_setCurrentTimezone("Asia/Shanghai"); }),
             new MenuItem{ListItemType::Generic, I18N_translate("Save format"), I18N_translate("The save format to use.\nMinUI: Game.gba.sav, Retroarch: Game.srm, Generic: Game.sav"),
             {(int)SAVE_FORMAT_SAV, (int)SAVE_FORMAT_SRM, (int)SAVE_FORMAT_SRM_UNCOMPRESSED, (int)SAVE_FORMAT_GEN},
             {I18N_translate("MinUI (default)"), I18N_translate("Retroarch (compressed)"), I18N_translate("Retroarch (uncompressed)"), I18N_translate("Generic")}, []() -> std::any
