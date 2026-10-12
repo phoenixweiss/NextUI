@@ -374,6 +374,7 @@ int GFX_loadSystemFont(const char *fontPath)
 	TTF_CloseFont(font.tiny);
 	TTF_CloseFont(font.micro);
 
+
 	font.large = TTF_OpenFont(fontPath, SCALE1(FONT_LARGE));
 	font.medium = TTF_OpenFont(fontPath, SCALE1(FONT_MEDIUM));
 	font.small = TTF_OpenFont(fontPath, SCALE1(FONT_SMALL));
@@ -1016,20 +1017,31 @@ FALLBACK_IMPLEMENTATION void PLAT_setEffectColor(int next_color) {}
 
 int GFX_truncateText(TTF_Font *font, const char *in_name, char *out_name, int max_width, int padding)
 {
-	int text_width;
-	strcpy(out_name, in_name);
-	TTF_SizeUTF8(font, out_name, &text_width, NULL);
-	text_width += padding;
+    int text_width = 0;
+    strcpy(out_name, in_name);
+    TTF_SizeUTF8(font, out_name, &text_width, NULL);
+    if (text_width + padding <= max_width)
+        return text_width + padding;
 
-	while (text_width > max_width)
-	{
-		int len = strlen(out_name);
-		strcpy(&out_name[len - 4], "...\0");
-		TTF_SizeUTF8(font, out_name, &text_width, NULL);
-		text_width += padding;
-	}
+    int ellipsis_width = 0;
+    TTF_SizeUTF8(font, "...", &ellipsis_width, NULL);
+    if (ellipsis_width + padding > max_width) {
+        out_name[0] = '\0';
+        return padding;
+    }
 
-	return text_width;
+    // Remove complete UTF-8 codepoints, never individual bytes of Cyrillic text.
+    size_t end = strlen(out_name);
+    do {
+        if (end) {
+            --end;
+            while (end && ((unsigned char)out_name[end] & 0xc0) == 0x80)
+                --end;
+        }
+        strcpy(out_name + end, "...");
+        TTF_SizeUTF8(font, out_name, &text_width, NULL);
+    } while (end && text_width + padding > max_width);
+    return text_width + padding;
 }
 int GFX_getTextHeight(TTF_Font *font, const char *in_name, char *out_name, int max_width, int padding)
 {
@@ -2594,7 +2606,8 @@ void GFX_sizeText(TTF_Font *font, const char *str, int leading, int *w, int *h)
 	*h = count * leading;
 
 	int mw = 0;
-	char line[256];
+	char *line = malloc(strlen(str) + 1);
+	if (!line) { *w = 0; *h = 0; return; }
 	for (int i = 0; i < count; i++)
 	{
 		int len;
@@ -2619,6 +2632,7 @@ void GFX_sizeText(TTF_Font *font, const char *str, int leading, int *w, int *h)
 				mw = lw;
 		}
 	}
+	free(line);
 	*w = mw;
 }
 void GFX_blitText(TTF_Font *font, const char *str, int leading, SDL_Color color, SDL_Surface *dst, SDL_Rect *dst_rect)
@@ -2641,7 +2655,8 @@ void GFX_blitText(TTF_Font *font, const char *str, int leading, SDL_Color color,
 	int y = dst_rect->y;
 
 	SDL_Surface *text;
-	char line[256];
+	char *line = malloc(strlen(str) + 1);
+	if (!line) return;
 	for (int i = 0; i < count; i++)
 	{
 		int len;
@@ -2665,6 +2680,7 @@ void GFX_blitText(TTF_Font *font, const char *str, int leading, SDL_Color color,
 			SDL_FreeSurface(text);
 		}
 	}
+	free(line);
 }
 
 SDL_Color GFX_mapColor(uint32_t c)

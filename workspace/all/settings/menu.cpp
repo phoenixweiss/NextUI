@@ -708,6 +708,7 @@ void MenuList::drawFixedItem(SDL_Surface *surface, const SDL_Rect &dst, const Ab
 
     // hack - this should be correlated to max_width
     int mw = dst.w;
+    int value_width = 0;
 
     if (selected)
     {
@@ -717,7 +718,10 @@ void MenuList::drawFixedItem(SDL_Surface *surface, const SDL_Rect &dst, const Ab
 
     if (item.getValue().has_value())
     {
-        text = TTF_RenderUTF8_Blended(font.tiny, item.getLabel().c_str(), text_color_value);
+        const auto label = item.getLabel();
+        std::vector<char> display_value(label.size() + 4);
+        GFX_truncateText(font.tiny, label.c_str(), display_value.data(), mw * 55 / 100, 0);
+        text = TTF_RenderUTF8_Blended(font.tiny, display_value.data(), text_color_value);
 
         if (item.getType() == ListItemType::Color)
         {
@@ -743,6 +747,7 @@ void MenuList::drawFixedItem(SDL_Surface *surface, const SDL_Rect &dst, const Ab
             char hexLabel[12];
             snprintf(hexLabel, sizeof(hexLabel), "0x%08X", rawColor);
             text = TTF_RenderUTF8_Blended(font.tiny, hexLabel, text_color_value);
+            value_width = text ? text->w + SCALE1(COLOR_PADDING + FONT_TINY) : 0;
             SDL_BlitSurfaceCPP(text, {}, surface, {dst.x + mw - text->w - SCALE1(OPTION_PADDING + COLOR_PADDING + FONT_TINY), dst.y + ((dst.h - text->h) / 2)});
         }
         else if(item.getType() == ListItemType::Button) {
@@ -751,23 +756,31 @@ void MenuList::drawFixedItem(SDL_Surface *surface, const SDL_Rect &dst, const Ab
         else if(item.getType() == ListItemType::Custom) {
             item.drawCustomItem(surface, dst, item, selected);
         }
-        else // Generic and fallback
+        else if (text) // Generic and fallback
+        {
+            value_width = text->w;
             SDL_BlitSurfaceCPP(text, {}, surface, {dst.x + mw - text->w - SCALE1(OPTION_PADDING), dst.y + ((dst.h - text->h) / 2)});
+        }
         SDL_FreeSurface(text);
     }
 
-    // TODO: blit a black pill on unselected rows (to cover longer item->values?) or truncate longer item->values?
+    // Reserve the value column before shortening the name, keeping UTF-8 intact.
+    const int name_width = std::max(0, mw - SCALE1(OPTION_PADDING * 2) - value_width
+        - (value_width ? SCALE1(OPTION_PADDING) : 0));
+    std::vector<char> display_name(item.getName().size() + 4);
+    const int text_width = GFX_truncateText(font.small, item.getName().c_str(),
+        display_name.data(), name_width, 0);
     if (selected)
     {
         // white pill
-        int w = 0;
-        TTF_SizeUTF8(font.small, item.getName().c_str(), &w, NULL);
+        int w = text_width;
         w += SCALE1(OPTION_PADDING * 2);
         GFX_blitPillDarkCPP(ASSET_BUTTON, surface, {dst.x, dst.y, w, SCALE1(BUTTON_SIZE)});
         text_color = uintToColour(THEME_COLOR5_255);
     }
 
-    text = TTF_RenderUTF8_Blended(font.small, item.getName().c_str(), text_color);
+    text = TTF_RenderUTF8_Blended(font.small, display_name.data(), text_color);
+    if (!text) return;
     SDL_BlitSurfaceCPP(text, {}, surface, {dst.x + SCALE1(OPTION_PADDING), dst.y + ((dst.h - text->h) / 2)});
     SDL_FreeSurface(text);
 }
