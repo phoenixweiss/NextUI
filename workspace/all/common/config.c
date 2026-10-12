@@ -139,8 +139,11 @@ uint32_t CFG_parseHexColor(const char *hexColor)
 // Defined below, alongside the rest of the palette-name accessors.
 static void setPaletteNameRaw(const char *name);
 
+static bool loadingSettings = false;
+
 void CFG_init(FontLoad_callback_t cb, ColorSet_callback_t ccb)
 {
+    loadingSettings = true;
     CFG_defaults(&settings);
     settings.onFontChange = cb;
     settings.onColorSet = ccb;
@@ -534,6 +537,7 @@ void CFG_init(FontLoad_callback_t cb, ColorSet_callback_t ccb)
     // avoid reloading the font if not neccessary
     if (!fontLoaded)
         CFG_setFontFile(CFG_getFontFile());
+    loadingSettings = false;
 }
 
 const char* CFG_getFontFile(void)
@@ -546,7 +550,7 @@ void CFG_setFontFile(const char* filename)
     if (!filename || !filename[0]) {
         strncpy(settings.fontFile, CFG_DEFAULT_FONT_FILE, sizeof(settings.fontFile) - 1);
         settings.fontFile[sizeof(settings.fontFile) - 1] = '\0';
-    } else {
+    } else if (filename != settings.fontFile) {
         strncpy(settings.fontFile, filename, sizeof(settings.fontFile) - 1);
         settings.fontFile[sizeof(settings.fontFile) - 1] = '\0';
     }
@@ -1579,6 +1583,7 @@ void CFG_get(const char *key, char *value)
 
 void CFG_sync(void)
 {
+    if (loadingSettings) return;
     // write to file
     char settingsPath[MAX_PATH];
     const char *shared_userdata = getenv("SHARED_USERDATA_PATH");
