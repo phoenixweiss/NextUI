@@ -27,6 +27,7 @@ typedef struct MenuItem {
 	MenuList* submenu;
 	MenuList_callback_t on_confirm;
 	MenuList_callback_t on_change;
+	bool localize_values; // Display labels only; canonical option values and filenames stay intact.
 } MenuItem;
 
 enum {
@@ -44,6 +45,7 @@ typedef struct MenuList {
 	MenuItem* items;
 	MenuList_callback_t on_confirm;
 	MenuList_callback_t on_change;
+	bool localize; // Translate interface metadata without changing stored identifiers.
 } MenuList;
 
 // -----------------------------------------------------------------------

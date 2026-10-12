@@ -7,6 +7,7 @@
 
 #include "defines.h"
 #include "api.h"
+#include "i18n.h"
 #include "utils.h"
 
 #include <sqlite3.h>
@@ -465,16 +466,16 @@ void renderPage()
     drawBatteryIcon(0, (SDL_Rect){graph.layout.icon_x, graph.layout.icon4_y});
 
     char text_line[255];
-    sprintf(text_line, "Since Charge: %s", session_duration);
+    sprintf(text_line, (char*)I18N_translate("Since Charge: %s"), session_duration);
     renderText(text_line, font.medium, COLOR_WHITE, &(SDL_Rect){graph.layout.label_session_x, graph.layout.label_session_y, graph.layout.label_size_x, graph.layout.label_size_y});
 
-    sprintf(text_line, "Current: %s", current_percentage);
+    sprintf(text_line, (char*)I18N_translate("Current: %s"), current_percentage);
     renderText(text_line, font.medium, COLOR_WHITE, &(SDL_Rect){graph.layout.label_current_x, graph.layout.label_current_y, graph.layout.label_size_x, graph.layout.label_size_y});
 
-    sprintf(text_line, "Remaining: %s", session_left);
+    sprintf(text_line, (char*)I18N_translate("Remaining: %s"), I18N_translate(session_left));
     renderTextAlignRight(text_line, font.medium, COLOR_WHITE, &(SDL_Rect){graph.layout.label_left_x, graph.layout.label_left_y, graph.layout.label_size_x, graph.layout.label_size_y});
 
-    sprintf(text_line, "Longest: %s", session_best);
+    sprintf(text_line, (char*)I18N_translate("Longest: %s"), session_best);
     renderTextAlignRight(text_line, font.medium, COLOR_WHITE, &(SDL_Rect){graph.layout.label_best_x, graph.layout.label_best_y, graph.layout.label_size_x, graph.layout.label_size_y});
 
     int half_line_width = (int)(GRAPH_LINE_WIDTH) / 2;
@@ -732,16 +733,16 @@ int main(int argc, char *argv[])
                 switch (current_zoom)
                 {
                 case 0:
-                    sprintf(display_name, "Battery usage: Last %s", "16 hours");
+                    sprintf(display_name, (char*)I18N_translate("Battery usage: Last %s"), (char*)I18N_translate("16 hours"));
                     break;
                 case 1:
-                    sprintf(display_name, "Battery usage: Last %s", "8 hours");
+                    sprintf(display_name, (char*)I18N_translate("Battery usage: Last %s"), (char*)I18N_translate("8 hours"));
                     break;
                 case 2:
-                    sprintf(display_name, "Battery usage: Last %s", "4 hours");
+                    sprintf(display_name, (char*)I18N_translate("Battery usage: Last %s"), (char*)I18N_translate("4 hours"));
                     break;
                 default:
-                    sprintf(display_name, "Battery usage: Last %s", "8 hours");
+                    sprintf(display_name, (char*)I18N_translate("Battery usage: Last %s"), (char*)I18N_translate("8 hours"));
                     break;
                 }
 
@@ -762,9 +763,9 @@ int main(int argc, char *argv[])
             if (show_setting)
                 GFX_blitHardwareHints(screen, show_setting);
             else
-                GFX_blitButtonGroup((char *[]){"L/R", "SCROLL", "L1/R1", "ZOOM", NULL}, 0, screen, 0);
+                GFX_blitButtonGroup((char *[]){"L/R", (char*)I18N_translate("SCROLL"), "L1/R1", (char*)I18N_translate("ZOOM"), NULL}, 0, screen, 0);
 
-            GFX_blitButtonGroup((char *[]){"B", "BACK", NULL}, 1, screen, 1);
+            GFX_blitButtonGroup((char *[]){"B", (char*)I18N_translate("BACK"), NULL}, 1, screen, 1);
 
             GFX_flip(screen);
             dirty = 0;

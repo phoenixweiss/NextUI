@@ -1,3 +1,7 @@
+extern "C" {
+#include "i18n.h"
+}
+
 #include "fnbuttonmenu.hpp"
 
 extern "C" {
@@ -106,7 +110,7 @@ public:
         for (size_t i = 0; i < values.size() && i < labels.size(); i++)
             if (std::any_cast<std::string>(values[i]) == current)
                 return labels[i];
-        return "None";
+        return I18N_translate("None");
     }
 
     InputReactionHint handleInput(int &dirty) override
@@ -132,7 +136,7 @@ MenuList* buildFnButtonMenu()
 
         // "" == unassigned, followed by every pak we found
         std::vector<std::any> values = {std::string("")};
-        std::vector<std::string> labels = {"None"};
+        std::vector<std::string> labels = {I18N_translate("None")};
 
         std::string current = CFG_getFnAction(i);
         bool found = current.empty();
@@ -147,7 +151,7 @@ MenuList* buildFnButtonMenu()
         // (card swapped, pak renamed, ...).
         if (!found) {
             values.push_back(current);
-            labels.push_back(current.substr(current.find(':') + 1) + " (missing)");
+            labels.push_back(current.substr(current.find(':') + 1) + I18N_translate(" (missing)"));
         }
 
         // Submenu: a plain list; selecting a row applies it and closes.
@@ -160,10 +164,10 @@ MenuList* buildFnButtonMenu()
                     return Exit;
                 }});
         }
-        auto *submenu = new MenuList(MenuItemType::Fixed, button + " button", std::move(subItems));
+        auto *submenu = new MenuList(MenuItemType::Fixed, button + I18N_translate(" button"), std::move(subItems));
 
-        items.push_back(new FnMenuItem{ListItemType::Generic, button + " button",
-            "The pak to launch when this button is pressed in the main menu.",
+        items.push_back(new FnMenuItem{ListItemType::Generic, button + I18N_translate(" button"),
+            I18N_translate("The pak to launch when this button is pressed in the main menu."),
             values, labels,
             [i]() -> std::any { return std::string(CFG_getFnAction(i)); },
             [i](const std::any &value) { CFG_setFnAction(i, std::any_cast<std::string>(value).c_str()); },
@@ -174,7 +178,7 @@ MenuList* buildFnButtonMenu()
     if (items.empty())
         return nullptr; // no assignable buttons on this device
 
-    items.push_back(new MenuItem{ListItemType::Button, "Reset to defaults",
-        "Resets all options in this menu to their default values.", ResetCurrentMenu});
-    return new MenuList(MenuItemType::Fixed, "Assignments", std::move(items));
+    items.push_back(new MenuItem{ListItemType::Button, I18N_translate("Reset to defaults"),
+        I18N_translate("Resets all options in this menu to their default values."), ResetCurrentMenu});
+    return new MenuList(MenuItemType::Fixed, I18N_translate("Assignments"), std::move(items));
 }

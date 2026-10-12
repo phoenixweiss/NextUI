@@ -1,3 +1,7 @@
+extern "C" {
+#include "i18n.h"
+}
+
 #include "palettemenu.hpp"
 
 extern "C" {
@@ -27,12 +31,12 @@ public:
                 name = std::any_cast<std::string>(v);
         }
         if (name.empty())
-            return "Custom";
+            return I18N_translate("Custom");
         // Show the persisted palette only if it is still available this session.
         for (const auto &v : getValues())
             if (std::any_cast<std::string>(v) == name)
                 return name;
-        return "Custom";
+        return I18N_translate("Custom");
     }
 
     InputReactionHint handleInput(int &dirty) override
@@ -58,7 +62,7 @@ AbstractMenuItem* buildPaletteMenuItem()
     std::vector<std::any> palette_values;
     std::vector<std::string> palette_labels;
     palette_values.push_back(std::string(""));
-    palette_labels.push_back("Custom");
+    palette_labels.push_back(I18N_translate("Custom"));
     for (const auto &p : palettes) {
         palette_values.push_back(std::string(p.name));
         palette_labels.push_back(p.name);
@@ -66,19 +70,19 @@ AbstractMenuItem* buildPaletteMenuItem()
 
     // Submenu: a plain list; selecting a row applies it and closes.
     std::vector<AbstractMenuItem *> paletteSubItems;
-    paletteSubItems.push_back(new MenuItem{ListItemType::Button, "Custom", "",
+    paletteSubItems.push_back(new MenuItem{ListItemType::Button, I18N_translate("Custom"), "",
         [](AbstractMenuItem &) -> InputReactionHint { CFG_selectCustomPalette(); return Exit; }});
     for (const auto &p : palettes) {
         ColorPalette palette = p; // capture a copy for the closure
         paletteSubItems.push_back(new MenuItem{ListItemType::Button, p.name, "",
             [palette](AbstractMenuItem &) -> InputReactionHint { PALETTE_apply(&palette); return Exit; }});
     }
-    auto *paletteSubmenu = new MenuList(MenuItemType::Fixed, "Color Palette", std::move(paletteSubItems));
+    auto *paletteSubmenu = new MenuList(MenuItemType::Fixed, I18N_translate("Color Palette"), std::move(paletteSubItems));
 
     // Selector row. on_set applies the palette named by the cycled value ("" == Custom).
     std::vector<ColorPalette> palettesForSetter = palettes;
-    return new PaletteMenuItem{ListItemType::Generic, "Color Palette",
-        "Pick a predefined color palette or edit the colors below.",
+    return new PaletteMenuItem{ListItemType::Generic, I18N_translate("Color Palette"),
+        I18N_translate("Pick a predefined color palette or edit the colors below."),
         palette_values, palette_labels,
         []() -> std::any { return std::string(CFG_getPaletteName()); },
         [palettesForSetter](const std::any &v) {

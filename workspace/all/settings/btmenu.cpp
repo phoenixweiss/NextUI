@@ -1,3 +1,7 @@
+extern "C" {
+#include "i18n.h"
+}
+
 #include "btmenu.hpp"
 #include "keyboardprompt.hpp"
 #ifdef HAS_BTAGENT
@@ -16,19 +20,19 @@ typedef std::shared_lock<Lock> ReadLock;
 using namespace Bluetooth;
 using namespace std::placeholders;
 
-Menu::Menu(const int &globalQuit, int &globalDirty) : MenuList(MenuItemType::Fixed, "Network", {}), globalQuit(globalQuit), globalDirty(globalDirty)
+Menu::Menu(const int &globalQuit, int &globalDirty) : MenuList(MenuItemType::Fixed, I18N_translate("Network"), {}), globalQuit(globalQuit), globalDirty(globalDirty)
 {
-    toggleItem = new MenuItem(ListItemType::Generic, "Bluetooth", "Enable/disable Bluetooth", {false, true}, {"Off", "On"},
+    toggleItem = new MenuItem(ListItemType::Generic, I18N_translate("Bluetooth"), I18N_translate("Enable/disable Bluetooth"), {false, true}, {I18N_translate("Off"), I18N_translate("On")},
                               std::bind(&Menu::getBtToggleState, this),
                               std::bind(&Menu::setBtToggleState, this, std::placeholders::_1),
                               std::bind(&Menu::resetBtToggleState, this));
-    diagItem = new MenuItem(ListItemType::Generic, "Bluetooth diagnostics", "Enable/disable Bluetooth logging", {false, true}, {"Off", "On"},
+    diagItem = new MenuItem(ListItemType::Generic, I18N_translate("Bluetooth diagnostics"), I18N_translate("Enable/disable Bluetooth logging"), {false, true}, {I18N_translate("Off"), I18N_translate("On")},
                               std::bind(&Menu::getBtDiagnosticsState, this),
                               std::bind(&Menu::setBtDiagnosticsState, this, std::placeholders::_1),
                               std::bind(&Menu::resetBtDiagnosticsState, this));
     items.push_back(toggleItem);
     items.push_back(diagItem);
-    rateItem = new MenuItem(ListItemType::Generic, "Maximum sampling rate", "44100 Hz: better compatibility\n48000 Hz: better quality", {44100, 48000}, {"44100 Hz", "48000 Hz"},
+    rateItem = new MenuItem(ListItemType::Generic, I18N_translate("Maximum sampling rate"), "44100 Hz: better compatibility\n48000 Hz: better quality", {44100, 48000}, {"44100 Hz", "48000 Hz"},
                               std::bind(&Menu::getSamplerateMaximum, this),
                               std::bind(&Menu::setSamplerateMaximum, this, std::placeholders::_1),
                               std::bind(&Menu::resetSamplerateMaximum, this));
@@ -80,7 +84,7 @@ std::any Menu::getBtToggleState() const
 void Menu::setBtToggleState(const std::any &on)
 {
     auto state = std::any_cast<bool>(on);
-    ScopedOverlay overlay(state ? "Enabling Bluetooth..." : "Disabling Bluetooth...");
+    ScopedOverlay overlay(state ? I18N_translate("Enabling Bluetooth...") : I18N_translate("Disabling Bluetooth..."));
     BT_enable(state);
 }
 
@@ -185,7 +189,7 @@ void Menu::updater()
                     for (auto &[s, r] : scanMap)
                     {
                         MenuList *options;
-                        options = new MenuList(MenuItemType::List, "Options", {new PairNewItem(r, selectionDirty)});
+                        options = new MenuList(MenuItemType::List, I18N_translate("Options"), {new PairNewItem(r, selectionDirty)});
                         auto itm = new PairableItem{r, options};
                         items.push_back(itm);
                     }
@@ -195,14 +199,14 @@ void Menu::updater()
                         MenuList *options;
                         if (r.is_connected)
                         {
-                            options = new MenuList(MenuItemType::List, "Options", {
+                            options = new MenuList(MenuItemType::List, I18N_translate("Options"), {
                                                                                     new DisconnectKnownItem(r, selectionDirty),
                                                                                     new UnpairItem(r, selectionDirty),
                                                                                 });
                         }
                         else
                         {
-                            options = new MenuList(MenuItemType::List, "Options", {
+                            options = new MenuList(MenuItemType::List, I18N_translate("Options"), {
                                                                                     new ConnectKnownItem(r, selectionDirty),
                                                                                     new UnpairItem(r, selectionDirty),
                                                                                 });
@@ -246,9 +250,9 @@ void Menu::updater()
 }
 
 PairNewItem::PairNewItem(BT_device d, bool& dirty)
-    : MenuItem(ListItemType::Button, "Pair", "Pair this device.", 
+    : MenuItem(ListItemType::Button, I18N_translate("Pair"), I18N_translate("Pair this device."),
         [&](AbstractMenuItem &item) -> InputReactionHint {
-            ScopedOverlay overlay("Pairing...");
+            ScopedOverlay overlay(I18N_translate("Pairing..."));
             BT_pair(dev.addr); 
             dirty = true;
             return Exit; 
@@ -256,7 +260,7 @@ PairNewItem::PairNewItem(BT_device d, bool& dirty)
 {}
 
 UnpairItem::UnpairItem(BT_devicePaired d, bool& dirty)
-    : MenuItem(ListItemType::Button, "Forget", "Forget this device.",
+    : MenuItem(ListItemType::Button, I18N_translate("Forget"), I18N_translate("Forget this device."),
         [&](AbstractMenuItem &item) -> InputReactionHint {
             BT_unpair(dev.remote_addr); 
             dirty = true;
@@ -265,9 +269,9 @@ UnpairItem::UnpairItem(BT_devicePaired d, bool& dirty)
 {}
 
 ConnectKnownItem::ConnectKnownItem(BT_devicePaired d, bool& dirty)
-    : MenuItem(ListItemType::Button, "Connect", "Connect this device.",
+    : MenuItem(ListItemType::Button, I18N_translate("Connect"), I18N_translate("Connect this device."),
         [&](AbstractMenuItem &item) -> InputReactionHint {
-            ScopedOverlay overlay("Connecting...");
+            ScopedOverlay overlay(I18N_translate("Connecting..."));
             BT_connect(dev.remote_addr); 
             dirty = true;
             return Exit; 
@@ -275,7 +279,7 @@ ConnectKnownItem::ConnectKnownItem(BT_devicePaired d, bool& dirty)
 {}
 
 DisconnectKnownItem::DisconnectKnownItem(BT_devicePaired d, bool& dirty)
-    : MenuItem(ListItemType::Button, "Disconnect", "Disconnect this device.",
+    : MenuItem(ListItemType::Button, I18N_translate("Disconnect"), I18N_translate("Disconnect this device."),
         [&](AbstractMenuItem &item) -> InputReactionHint {
             BT_disconnect(dev.remote_addr); 
             dirty = true;

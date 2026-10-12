@@ -3,6 +3,7 @@
 extern "C"
 {
 #include "defines.h"
+#include "i18n.h"
 #include "api.h"
 #include "utils.h"
 }
@@ -79,7 +80,7 @@ void MenuItem::generateDefaultLabels(const std::string& suffix)
         else if (v.type() == typeid(uint32_t))
             labels.push_back(std::to_string(std::any_cast<uint32_t>(v)) + suffix);
         else if (v.type() == typeid(bool))
-            labels.push_back((std::any_cast<bool>(v) ? "On" : "Off") + suffix);
+            labels.push_back((std::any_cast<bool>(v) ? I18N_translate("On") : I18N_translate("Off")) + suffix);
         else
             assert(false); // needs more string conversion
     }
@@ -405,11 +406,12 @@ bool MenuList::selectByName(const std::string &name)
     //LOG_info("Found element %s (%d) at pos %d\n", name.c_str(), scope.selected - scope.start, toSelect);
     if (toSelect >= 0)
     {
-        performLayout((SDL_Rect){0, 0, FIXED_WIDTH, FIXED_HEIGHT});
-        while(toSelect > 0) {
-            selectNext();
-            toSelect--;
-        }
+        // Keep the viewport calculated for the content area, not the full screen.
+        scope.selected = toSelect;
+        scope.start = std::max(0, std::min(scope.start, toSelect));
+        if (toSelect >= scope.start + scope.visible_rows)
+            scope.start = toSelect - scope.visible_rows + 1;
+        scope.end = std::min(scope.count, scope.start + scope.visible_rows);
         return true;
     }
     return false;
@@ -441,6 +443,17 @@ InputReactionHint MenuList::handleInput(int &dirty, int &quit)
     }
 
     ReadLock r(itemLock);
+    if (page_navigation && scope.count > scope.max_visible_options &&
+        (PAD_justRepeated(BTN_L1) || PAD_justRepeated(BTN_R1))) {
+        const bool forward = PAD_justRepeated(BTN_R1);
+        const int steps = std::min(scope.max_visible_options,
+            forward ? scope.count - scope.selected - 1 : scope.selected);
+        for (int i = 0; i < steps; ++i) {
+            if (forward) selectNext(); else selectPrev();
+        }
+        dirty = 1;
+        return NoOp;
+    }
     InputReactionHint handled = items.at(scope.selected)->handleInput(dirty);
     if(handled == ResetAllItems) {
         resetAllItems();
@@ -872,7 +885,7 @@ void MenuList::drawMain(SDL_Surface *surface, const SDL_Rect &dst, const SDL_Rec
     }
     else
     {
-        GFX_blitMessageCPP(font.large, "Empty folder", surface, dst);
+        GFX_blitMessageCPP(font.large, I18N_translate("Empty folder"), surface, dst);
     }
 }
 
@@ -972,10 +985,10 @@ static void drawOverlayLocal(SDL_Surface* screen) {
     
     if (overlayDismissMode != OverlayDismissMode::None) {
         if (overlayDismissMode == OverlayDismissMode::DismissOnB) {
-            char *hints[] = {(char *)("B"), (char *)("BACK"), NULL};
+            char *hints[] = {(char *)("B"), (char *)I18N_translate("BACK"), NULL};
             GFX_blitButtonGroup(hints, 1, screen, 1);
         } else if (overlayDismissMode == OverlayDismissMode::DismissOnA) {
-            char *hints[] = {(char *)("A"), (char *)("OK"), NULL};
+            char *hints[] = {(char *)("A"), (char *)I18N_translate("OK"), NULL};
             GFX_blitButtonGroup(hints, 1, screen, 1);
         }
     }

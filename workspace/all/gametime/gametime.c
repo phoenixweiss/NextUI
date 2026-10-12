@@ -7,6 +7,7 @@
 
 #include "defines.h"
 #include "api.h"
+#include "i18n.h"
 #include "utils.h"
 
 #include <sqlite3.h>
@@ -263,7 +264,7 @@ void renderList(int count, int start, int end, int selected)
         serializeTime(average, entry->play_time_average);
         snprintf(plays, 24, "%d", entry->play_count);
 
-        const char *details[] = {"TOTAL ", total, "  AVERAGE ", average, "  # PLAYS ", plays};
+        const char *details[] = {(char*)I18N_translate("TOTAL "), total, (char*)I18N_translate("  AVERAGE "), average, (char*)I18N_translate("  # PLAYS "), plays};
         SDL_Rect detailsRect = {
             layout.list_display_start_x + num_width + thumbMargin + SCALE1(IMG_MAX_WIDTH), 
             layout.list_display_start_y + thumbMargin + textHeight + elemHeight * row, 
@@ -407,7 +408,7 @@ int main(int argc, char *argv[])
                 char play_time_total_formatted[255];
                 serializeTime(play_time_total_formatted, play_time_total);
                 char display_name[256];
-                sprintf(display_name, "Time spent having fun: %s", play_time_total_formatted);
+                sprintf(display_name, (char*)I18N_translate("Time spent having fun: %s"), play_time_total_formatted);
 
                 char title[256];
                 int text_width = GFX_truncateText(font.large, display_name, title, max_width, SCALE1(BUTTON_PADDING * 2));
@@ -425,9 +426,9 @@ int main(int argc, char *argv[])
             if (show_setting)
                 GFX_blitHardwareHints(screen, show_setting);
             else
-                GFX_blitButtonGroup((char *[]){"U/D", "SCROLL", NULL}, 0, screen, 0);
+                GFX_blitButtonGroup((char *[]){"U/D", (char*)I18N_translate("SCROLL"), NULL}, 0, screen, 0);
 
-            GFX_blitButtonGroup((char *[]){"B", "BACK", NULL}, 1, screen, 1);
+            GFX_blitButtonGroup((char *[]){"B", (char*)I18N_translate("BACK"), NULL}, 1, screen, 1);
 
             GFX_flip(screen);
             dirty = 0;

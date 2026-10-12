@@ -374,6 +374,22 @@ int GFX_loadSystemFont(const char *fontPath)
 	TTF_CloseFont(font.tiny);
 	TTF_CloseFont(font.micro);
 
+    char fallbackPath[MAX_PATH];
+    if (strcmp(CFG_getLanguage(), "ru") == 0) {
+        TTF_Font *probe = TTF_OpenFont(fontPath, SCALE1(FONT_LARGE));
+        bool hasRussian = probe != NULL;
+        if (probe) {
+            for (unsigned c = 0x410; c <= 0x44f; ++c)
+                if (!TTF_GlyphIsProvided(probe, c)) hasRussian = false;
+            if (!TTF_GlyphIsProvided(probe, 0x401) || !TTF_GlyphIsProvided(probe, 0x451))
+                hasRussian = false;
+            TTF_CloseFont(probe);
+        }
+        if (!hasRussian) {
+            snprintf(fallbackPath, sizeof(fallbackPath), "%s/font1.ttf", RES_PATH);
+            fontPath = fallbackPath;
+        }
+    }
 
 	font.large = TTF_OpenFont(fontPath, SCALE1(FONT_LARGE));
 	font.medium = TTF_OpenFont(fontPath, SCALE1(FONT_MEDIUM));

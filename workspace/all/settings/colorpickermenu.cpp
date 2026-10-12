@@ -1,3 +1,7 @@
+extern "C" {
+#include "i18n.h"
+}
+
 #include "colorpickermenu.hpp"
 
 #include <cmath>
@@ -397,17 +401,17 @@ void ColorPickerMenu::drawCustom(SDL_Surface *surface, const SDL_Rect &dst, cons
 
     // Button hints at the bottom of the screen
     {
-        char *primary_hints[] = {(char *)"B", (char *)"BACK", (char *)"A", (char *)"APPLY", nullptr};
+        char *primary_hints[] = {(char *)"B", (char *)I18N_translate("BACK"), (char *)"A", (char *)I18N_translate("APPLY"), nullptr};
         GFX_blitButtonGroup(primary_hints, 0, surface, 1);
 
         if (selected < NUM_SLIDERS)
         {
-            char *secondary_hints[] = {(char *)"L/R", (char *)"FINE", (char *)"L1/R1", (char *)"COARSE", nullptr};
+            char *secondary_hints[] = {(char *)"L/R", (char *)I18N_translate("FINE"), (char *)"L1/R1", (char *)I18N_translate("COARSE"), nullptr};
             GFX_blitButtonGroup(secondary_hints, 0, surface, 0);
         }
         else
         {
-            char *secondary_hints[] = {(char *)"X", (char *)"COPY", nullptr};
+            char *secondary_hints[] = {(char *)"X", (char *)I18N_translate("COPY"), nullptr};
             GFX_blitButtonGroup(secondary_hints, 0, surface, 0);
         }
     }

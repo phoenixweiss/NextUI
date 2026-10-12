@@ -1,3 +1,7 @@
+extern "C" {
+#include "i18n.h"
+}
+
 #include "keyboardprompt.hpp"
 
 constexpr int keyboardRows = 5;
@@ -315,7 +319,7 @@ void KeyboardPrompt::drawKeyboard(SDL_Surface *screen, const AppState &state)
     const auto key = currentLayout->at(state.keyboard.row).at(state.keyboard.col);
 
     // draw the button group on the button-right
-    char *hints[] = {(char *)("Y"), (char *)("EXIT"), (char *)("X"), ((char *)"ENTER"), NULL};
+    char *hints[] = {(char *)("Y"), (char *)(I18N_translate("EXIT")), (char *)("X"), ((char *)I18N_translate("ENTER")), NULL};
     GFX_blitButtonGroup(hints, 1, screen, 1);
 
     // draw keyboard title
@@ -372,9 +376,9 @@ void KeyboardPrompt::drawKeyboard(SDL_Surface *screen, const AppState &state)
     // so we need to compute their width separately
     // compute them here to avoid doing it conditionally for each row
     int shift_width, space_width, enter_width;
-    TTF_SizeUTF8(font.medium, "shift", &shift_width, NULL);
-    TTF_SizeUTF8(font.medium, "space", &space_width, NULL);
-    TTF_SizeUTF8(font.medium, "enter", &enter_width, NULL);
+    TTF_SizeUTF8(font.medium, I18N_translate("shift"), &shift_width, NULL);
+    TTF_SizeUTF8(font.medium, I18N_translate("space"), &space_width, NULL);
+    TTF_SizeUTF8(font.medium, I18N_translate("enter"), &enter_width, NULL);
     int special_key_width = std::max(shift_width, std::max(space_width, enter_width)) + (column_spacing * 4);
 
     for (int row = 0; row < num_rows; row++)
@@ -409,7 +413,8 @@ void KeyboardPrompt::drawKeyboard(SDL_Surface *screen, const AppState &state)
                 continue;
 
             SDL_Color text_color = (row == state.keyboard.row && col == state.keyboard.col) ? COLOR_BLACK : COLOR_WHITE;
-            SDL_Surface *key_text = TTF_RenderUTF8_Blended(font.medium, key.c_str(), text_color);
+            SDL_Surface *key_text = TTF_RenderUTF8_Blended(font.medium,
+                (key == "shift" || key == "space" || key == "enter") ? I18N_translate(key.c_str()) : key.c_str(), text_color);
 
             // special keys are not the same width as the other keys
             // so we need to compute their width separately

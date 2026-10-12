@@ -11,6 +11,7 @@
 #include "api.h"
 #include "utils.h"
 #include "config.h"
+#include "i18n.h"
 #include <sys/resource.h>
 #include <pthread.h>
 #include <assert.h>
@@ -148,7 +149,7 @@ static Entry* Entry_new(char* path, int type) {
 	return self;
 }
 
-static Entry* Entry_newNamed(char* path, int type, char* displayName) {
+static Entry* Entry_newNamed(char* path, int type, const char* displayName) {
 	Entry *self = Entry_new(path, type);
 	self->name = strdup(displayName);
 	return self;
@@ -825,6 +826,25 @@ static Array* getQuickEntries(void) {
     }
 
 	return entries;
+}
+
+// Built-in display labels only: paths, user aliases and action identifiers stay intact.
+static const char* Entry_displayName(const Entry* entry) {
+    if (entry->type == ENTRY_DIP) return I18N_translate(entry->name);
+    if (strcmp(entry->path, FAUX_RECENT_PATH) == 0 && (strcmp(entry->name, "Recently Played") == 0 || strcmp(entry->name, "Recents") == 0)) return I18N_translate("Recents");
+    if (strcmp(entry->path, ROMS_PATH) == 0 && strcmp(entry->name, "Games") == 0) return I18N_translate("Games");
+    if (strcmp(entry->path, COLLECTIONS_PATH) == 0 && strcmp(entry->name, "Collections") == 0) return I18N_translate("Collections");
+    char tools_path[MAX_PATH];
+    snprintf(tools_path, sizeof(tools_path), "%s/Tools/%s", SDCARD_PATH, PLATFORM);
+    if (strcmp(entry->path, tools_path) == 0 && strcmp(entry->name, "Tools") == 0) return I18N_translate("Tools");
+    static const char *builtin_tools[] = {"Settings", "Battery", "Bootlogo", "Clock", "Files", "Game Tracker", "Input", "LedControl", "Pak Store", "Updater", NULL};
+    for (int i = 0; entry->type == ENTRY_PAK && builtin_tools[i]; ++i) {
+        char path[MAX_PATH];
+        snprintf(path, sizeof(path), "%s/%s.pak", tools_path, builtin_tools[i]);
+        if (strcmp(entry->path, path) == 0 && strcmp(entry->name, builtin_tools[i]) == 0)
+            return I18N_translate(builtin_tools[i]);
+    }
+    return entry->name;
 }
 
 static Array* getQuickToggles(void) {
@@ -2692,9 +2712,9 @@ int main (int argc, char *argv[]) {
 
 				// buttons (duped and trimmed from below)
 				if (show_setting && !GetHDMI()) GFX_blitHardwareHints(screen, show_setting);
-				else GFX_blitButtonGroup((char*[]){ BTN_SLEEP==BTN_POWER?"POWER":"MENU","SLEEP",  NULL }, 0, screen, 0);
+				else GFX_blitButtonGroup((char*[]){ BTN_SLEEP==BTN_POWER?"POWER":"MENU",(char *)I18N_translate("SLEEP"),  NULL }, 0, screen, 0);
 
-				GFX_blitButtonGroup((char*[]){ "B","BACK", "A","OPEN", NULL }, 1, screen, 1);
+				GFX_blitButtonGroup((char*[]){ "B",(char *)I18N_translate("BACK"), "A",(char *)I18N_translate("OPEN"), NULL }, 1, screen, 1);
 
 				if(CFG_getShowQuickswitcherUI()) {
 					#define MENU_ITEM_SIZE 72 // item size, top line
@@ -2842,7 +2862,7 @@ int main (int argc, char *argv[]) {
 						int max_width = screen->w - SCALE1(PADDING * 2) - ow;
 
 						char display_name[256];
-						int text_width = GFX_truncateText(font.large, selectedEntry->name, display_name, max_width, SCALE1(BUTTON_PADDING*2));
+						int text_width = GFX_truncateText(font.large, Entry_displayName(selectedEntry), display_name, max_width, SCALE1(BUTTON_PADDING*2));
 						max_width = MIN(max_width, text_width);
 
 						SDL_Surface* text;
@@ -2869,10 +2889,10 @@ int main (int argc, char *argv[]) {
 						SDL_FreeSurface(text);
 					}
 
-					GFX_blitButtonGroup((char*[]){ "B","BACK",  NULL }, 0, screen, 0);
+					GFX_blitButtonGroup((char*[]){ "B",(char *)I18N_translate("BACK"),  NULL }, 0, screen, 0);
 
-					if(can_resume) GFX_blitButtonGroup((char*[]){ "Y", "REMOVE", "A","RESUME", NULL }, 1, screen, 1);
-					else GFX_blitButtonGroup((char*[]){ "A","OPEN", NULL }, 1, screen, 1);
+					if(can_resume) GFX_blitButtonGroup((char*[]){ "Y", (char *)I18N_translate("REMOVE"), "A",(char *)I18N_translate("RESUME"), NULL }, 1, screen, 1);
+					else GFX_blitButtonGroup((char*[]){ "A",(char *)I18N_translate("OPEN"), NULL }, 1, screen, 1);
 
 					if(has_preview) {
 						// lotta memory churn here
@@ -2951,15 +2971,15 @@ int main (int argc, char *argv[]) {
 								GFX_animateSurface(tmpsur,0-screen->w,0,0,0,screen->w,screen->h,CFG_getMenuTransitions() ? 80:20,0,255,LAYER_ALL);
 						}
 						SDL_FreeSurface(tmpsur);
-						GFX_blitMessage(font.large, "No Preview", screen, &preview_rect);
+						GFX_blitMessage(font.large, (char *)I18N_translate("No Preview"), screen, &preview_rect);
 					}
 					Entry_free(selectedEntry);
 				}
 				else {
 					SDL_Rect preview_rect = {ox,oy,screen->w,screen->h};
 					SDL_FillRect(screen, &preview_rect, 0);
-					GFX_blitMessage(font.large, "No Recents", screen, &preview_rect);
-					GFX_blitButtonGroup((char*[]){ "B","BACK", NULL }, 1, screen, 1);
+					GFX_blitMessage(font.large, (char *)I18N_translate("No Recents"), screen, &preview_rect);
+					GFX_blitButtonGroup((char*[]){ "B",(char *)I18N_translate("BACK"), NULL }, 1, screen, 1);
 				}
 
 				GFX_flipHidden();
@@ -3049,23 +3069,23 @@ int main (int argc, char *argv[]) {
 
 				// buttons
 				if (show_setting && !GetHDMI()) GFX_blitHardwareHints(screen, show_setting);
-				else if (can_resume) GFX_blitButtonGroup((char*[]){ "X","RESUME",  NULL }, 0, screen, 0);
+				else if (can_resume) GFX_blitButtonGroup((char*[]){ "X",(char *)I18N_translate("RESUME"),  NULL }, 0, screen, 0);
 				else GFX_blitButtonGroup((char*[]){
 					BTN_SLEEP==BTN_POWER?"POWER":"MENU",
-					BTN_SLEEP==BTN_POWER||simple_mode?"SLEEP":"INFO",
+					BTN_SLEEP==BTN_POWER||simple_mode?(char *)I18N_translate("SLEEP"):(char *)I18N_translate("INFO"),
 					NULL }, 0, screen, 0);
 
 				if (total==0) {
 					if (stack->count>1) {
-						GFX_blitButtonGroup((char*[]){ "B","BACK",  NULL }, 0, screen, 1);
+						GFX_blitButtonGroup((char*[]){ "B",(char *)I18N_translate("BACK"),  NULL }, 0, screen, 1);
 					}
 				}
 				else {
 					if (stack->count>1) {
-						GFX_blitButtonGroup((char*[]){ "B","BACK", "A","OPEN", NULL }, 1, screen, 1);
+						GFX_blitButtonGroup((char*[]){ "B",(char *)I18N_translate("BACK"), "A",(char *)I18N_translate("OPEN"), NULL }, 1, screen, 1);
 					}
 					else {
-						GFX_blitButtonGroup((char*[]){ "A","OPEN", NULL }, 0, screen, 1);
+						GFX_blitButtonGroup((char*[]){ "A",(char *)I18N_translate("OPEN"), NULL }, 0, screen, 1);
 					}
 				}
 
@@ -3077,7 +3097,7 @@ int main (int argc, char *argv[]) {
 					SDL_Color text_color = uintToColour(THEME_COLOR4_255); // list text color
 					for (int i = top->start, j = 0; i < top->end; i++, j++) {
 						Entry* entry = top->entries->items[i];
-						char* entry_name = entry->name;
+						char* entry_name = (char*)Entry_displayName(entry);
 						char* entry_unique = entry->unique;
 						int available_width = MAX(0,(had_thumb ? ox + SCALE1(BUTTON_MARGIN) : screen->w - SCALE1(BUTTON_MARGIN)) - SCALE1(PADDING * 2));
 						bool row_is_selected = (j == selected_row);
@@ -3166,7 +3186,7 @@ int main (int argc, char *argv[]) {
 				}
 				else {
 					// TODO: for some reason screen's dimensions end up being 0x0 in GFX_blitMessage...
-					GFX_blitMessage(font.large, "Empty folder", screen, &(SDL_Rect){0,0,screen->w,screen->h}); //, NULL);
+					GFX_blitMessage(font.large, (char*)I18N_translate("Empty folder"), screen, &(SDL_Rect){0,0,screen->w,screen->h}); //, NULL);
 				}
 
 				lastScreen = SCREEN_GAMELIST;
@@ -3331,7 +3351,7 @@ int main (int argc, char *argv[]) {
 					int ow = GFX_blitHardwareGroup(screen, show_setting);
 					Entry* entry = top->entries->items[top->selected];
 					trimSortingMeta(&entry->name);
-					char* entry_text = entry->name;
+					char* entry_text = (char*)Entry_displayName(entry);
 					if (entry->unique) {
 						trimSortingMeta(&entry->unique);
 						entry_text = entry->unique;

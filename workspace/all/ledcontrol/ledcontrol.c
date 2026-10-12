@@ -4,6 +4,7 @@
 #include "sdl.h"
 #include "defines.h"
 #include "api.h"
+#include "i18n.h"
 #include "utils.h"
 
 
@@ -270,9 +271,9 @@ int main(int argc, char *argv[])
 
             if (msg_dirty) {
                 GFX_clear(screen);
-                GFX_blitMessage(font.large, "This device has no RGB lights.", screen,
+                GFX_blitMessage(font.large, (char*)I18N_translate("This device has no RGB lights."), screen,
                     &(SDL_Rect){0, 0, screen->w, screen->h});
-                GFX_blitButtonGroup((char*[]){ "B","BACK", NULL }, 1, screen, 1);
+                GFX_blitButtonGroup((char*[]){ "B",(char*)I18N_translate("BACK"), NULL }, 1, screen, 1);
                 GFX_flip(screen);
                 msg_dirty = 0;
             }
@@ -367,8 +368,8 @@ int main(int argc, char *argv[])
 
             if (show_setting) GFX_blitHardwareHints(screen, show_setting);
 
-            GFX_blitButtonGroup((char*[]){ "B","BACK", NULL }, 1, screen, 1);
-            GFX_blitButtonGroup((char*[]){ "L/R","Select light", NULL }, 0, screen, 0);
+            GFX_blitButtonGroup((char*[]){ "B",(char*)I18N_translate("BACK"), NULL }, 1, screen, 1);
+            GFX_blitButtonGroup((char*[]){ "L/R",(char*)I18N_translate("Select light"), NULL }, 0, screen, 0);
 
 
             int max_width = screen->w - SCALE1(PADDING * 2) - ow;
@@ -377,7 +378,7 @@ int main(int argc, char *argv[])
             snprintf(light_name_text, sizeof(light_name_text), "%s", lightnames[selected_light]);
 
             char title[256];
-            int text_width = GFX_truncateText(font.medium, light_name_text, title, max_width, SCALE1(BUTTON_PADDING * 2));
+            int text_width = GFX_truncateText(font.medium, I18N_translate(light_name_text), title, max_width, SCALE1(BUTTON_PADDING * 2));
             max_width = MIN(max_width, text_width);
 
             SDL_Surface *text;
@@ -414,7 +415,7 @@ int main(int argc, char *argv[])
                 int y = SCALE1(PADDING + PILL_SIZE * (j + 1));
 
                 if (j == 0) { // Display effect name instead of number
-                    snprintf(setting_text, sizeof(setting_text), "%s: %s", settings_labels[j], effect_name_for(selected_light, settings_values[j]));
+                    snprintf(setting_text, sizeof(setting_text), "%s: %s", I18N_translate(settings_labels[j]), I18N_translate(effect_name_for(selected_light, settings_values[j])));
                     SDL_Surface *text = TTF_RenderUTF8_Blended(font.medium, setting_text, current_color);
                     int text_width = text->w + SCALE1(BUTTON_PADDING * 2);
                     GFX_blitPill(selected ? ASSET_WHITE_PILL : ASSET_BLACK_PILL, screen,
@@ -424,7 +425,7 @@ int main(int argc, char *argv[])
                         &(SDL_Rect){SCALE1(PADDING + BUTTON_PADDING), y + SCALE1(4)});
                     SDL_FreeSurface(text);
                 } else if (j == 1) { // Display color as hex code
-                    snprintf(setting_text, sizeof(setting_text), "%s", settings_labels[j]);
+                    snprintf(setting_text, sizeof(setting_text), "%s", I18N_translate(settings_labels[j]));
                     SDL_Surface *text = TTF_RenderUTF8_Blended(font.medium, setting_text, current_color);
                     int text_width = text->w + SCALE1(BUTTON_PADDING * 2);
                     GFX_blitPill(selected ? ASSET_WHITE_PILL : ASSET_BLACK_PILL, screen, 
@@ -440,7 +441,7 @@ int main(int argc, char *argv[])
                         y + SCALE1(BUTTON_MARGIN)
                     }, ((uint32_t)settings_values[j] << 8) | 0xFF);
                 } else  {
-                    snprintf(setting_text, sizeof(setting_text), "%s: %d", settings_labels[j], settings_values[j]);
+                    snprintf(setting_text, sizeof(setting_text), "%s: %d", I18N_translate(settings_labels[j]), settings_values[j]);
                     SDL_Surface *text = TTF_RenderUTF8_Blended(font.medium, setting_text, current_color);
                     int text_width = text->w + SCALE1(BUTTON_PADDING * 2);
                     GFX_blitPill(selected ? ASSET_WHITE_PILL : ASSET_BLACK_PILL, screen, 

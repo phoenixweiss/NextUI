@@ -12,6 +12,7 @@
 #include "ra_sync.h"
 #include "defines.h"
 #include "api.h"
+#include "i18n.h"
 
 #define RA_UTIL_NEED_SDL
 #include "ra_util.h"
@@ -927,7 +928,7 @@ static void ra_show_game_summary(rc_client_t* client, const rc_client_game_t* ga
 	}
 	
 	char message[NOTIFICATION_MAX_MESSAGE];
-	snprintf(message, sizeof(message), "%s - %u/%u achievements",
+	snprintf(message, sizeof(message), I18N_translate("%s - %u/%u achievements"),
 	         game->title, display_unlocked, display_total);
 	Notification_push(NOTIFICATION_ACHIEVEMENT, message, NULL);
 }
@@ -1288,7 +1289,7 @@ static void ra_event_handler(const rc_client_event_t* event, rc_client_t* client
 			RA_LOG_DEBUG("Skipping hidden achievement notification\n");
 			break;
 		}
-		snprintf(message, sizeof(message), "Achievement Unlocked: %s",
+		snprintf(message, sizeof(message), I18N_translate("Achievement Unlocked: %s"),
 		         event->achievement->title);
 		// Get the unlocked badge icon (not locked)
 		badge_icon = RA_Badges_getNotificationSize(event->achievement->badge_name, false);
@@ -1365,7 +1366,7 @@ static void ra_event_handler(const rc_client_event_t* event, rc_client_t* client
 		break;
 		
 	case RC_CLIENT_EVENT_LEADERBOARD_STARTED:
-		snprintf(message, sizeof(message), "Leaderboard: %s",
+		snprintf(message, sizeof(message), I18N_translate("Leaderboard: %s"),
 		         event->leaderboard->title);
 		Notification_push(NOTIFICATION_ACHIEVEMENT, message, NULL);
 		RA_LOG_INFO("Leaderboard started: %s\n", event->leaderboard->title);
@@ -1376,7 +1377,7 @@ static void ra_event_handler(const rc_client_event_t* event, rc_client_t* client
 		break;
 		
 	case RC_CLIENT_EVENT_LEADERBOARD_SUBMITTED:
-		snprintf(message, sizeof(message), "Submitted %s to %s",
+		snprintf(message, sizeof(message), I18N_translate("Submitted %s to %s"),
 		         event->leaderboard->tracker_value, event->leaderboard->title);
 		Notification_push(NOTIFICATION_ACHIEVEMENT, message, NULL);
 		RA_LOG_INFO("Leaderboard submitted: %s - %s\n",
@@ -1384,7 +1385,7 @@ static void ra_event_handler(const rc_client_event_t* event, rc_client_t* client
 		break;
 		
 	case RC_CLIENT_EVENT_GAME_COMPLETED:
-		Notification_push(NOTIFICATION_ACHIEVEMENT, "Game Mastered!", NULL);
+		Notification_push(NOTIFICATION_ACHIEVEMENT, I18N_translate("Game Mastered!"), NULL);
 		RA_LOG_INFO("Game mastered!\n");
 		break;
 		
@@ -1396,7 +1397,7 @@ static void ra_event_handler(const rc_client_event_t* event, rc_client_t* client
 		RA_LOG_ERROR("Server error: %s\n",
 		       event->server_error ? event->server_error->error_message : "unknown");
 		// Show notification for server errors
-		snprintf(message, sizeof(message), "RA Server Error: %s",
+		snprintf(message, sizeof(message), I18N_translate("RA Server Error: %s"),
 		         event->server_error ? event->server_error->error_message : "unknown");
 		Notification_push(NOTIFICATION_ACHIEVEMENT, message, NULL);
 		break;
@@ -1499,14 +1500,14 @@ static void ra_login_callback(int result, const char* error_message,
 			if (ra_login_retry.count == 1 && !ra_login_retry.notified_connecting) {
 				ra_login_retry.notified_connecting = true;
 				Notification_push(NOTIFICATION_ACHIEVEMENT, 
-				                  "Connecting to RetroAchievements...", NULL);
+				                  I18N_translate("Connecting to RetroAchievements..."), NULL);
 			}
 		} else {
 			// All retries exhausted — transition to FAILED
 			ra_login_state = LOGIN_FAILED;
 			RA_LOG_ERROR("All login retries exhausted\n");
 			Notification_push(NOTIFICATION_ACHIEVEMENT, 
-			                  "RetroAchievements: Connection failed", NULL);
+			                  I18N_translate("RetroAchievements: Connection failed"), NULL);
 			ra_reset_login_retry();
 			if (ra_game_state == GAME_PENDING_LOGIN) {
 				ra_game_state = GAME_NONE;
@@ -1613,8 +1614,8 @@ static int ra_sync_thread_func(void* data) {
 	// Show sync progress in top-left (same area as badge download notifications)
 	if (display_count > 0) {
 		char msg[NOTIFICATION_MAX_MESSAGE];
-		snprintf(msg, sizeof(msg), "Syncing %u offline achievement%s...",
-		         display_count, display_count == 1 ? "" : "s");
+		snprintf(msg, sizeof(msg), I18N_translate("Syncing %u offline achievement%s..."),
+		         display_count, strcmp(CFG_getLanguage(), "ru") == 0 || display_count == 1 ? "" : "s");
 		Notification_setProgressIndicatorPersistent(true);
 		Notification_showProgressIndicator(msg, "", NULL);
 	}
@@ -1672,14 +1673,14 @@ static int ra_sync_thread_func(void* data) {
 	{
 		char msg[NOTIFICATION_MAX_MESSAGE];
 		if (result.failed > 0) {
-			snprintf(msg, sizeof(msg), "Sync incomplete: %u synced, will retry later",
+			snprintf(msg, sizeof(msg), I18N_translate("Sync incomplete: %u synced, will retry later"),
 			         result.synced);
 		} else if (result.synced > 0) {
-			snprintf(msg, sizeof(msg), "Synced %u offline achievement%s",
-			         result.synced, result.synced == 1 ? "" : "s");
+			snprintf(msg, sizeof(msg), I18N_translate("Synced %u offline achievement%s"),
+			         result.synced, strcmp(CFG_getLanguage(), "ru") == 0 || result.synced == 1 ? "" : "s");
 		} else if (result.skipped > 0) {
-			snprintf(msg, sizeof(msg), "Sync: %u achievement%s skipped",
-			         result.skipped, result.skipped == 1 ? "" : "s");
+			snprintf(msg, sizeof(msg), I18N_translate("Sync: %u achievement%s skipped"),
+			         result.skipped, strcmp(CFG_getLanguage(), "ru") == 0 || result.skipped == 1 ? "" : "s");
 		}
 		if (result.synced > 0 || result.failed > 0 || result.skipped > 0) {
 			// Show first (resets start_time), THEN clear persistent.
@@ -2006,7 +2007,7 @@ static void ra_game_loaded_callback(int result, const char* error_message,
 		} else {
 			RA_LOG_WARN("Game not recognized by RetroAchievements\n");
 			Notification_push(NOTIFICATION_ACHIEVEMENT,
-			                  "No achievements found for this game", NULL);
+			                  I18N_translate("No achievements found for this game"), NULL);
 		}
 	} else {
 		RA_LOG_ERROR("Game load failed: %s\n", error_message ? error_message : "unknown error");
@@ -2022,7 +2023,7 @@ static void ra_game_loaded_callback(int result, const char* error_message,
 			ra_game_state = GAME_NONE;
 			ra_clear_pending_game();
 			Notification_push(NOTIFICATION_ACHIEVEMENT,
-			                  "No achievements found for this game", NULL);
+			                  I18N_translate("No achievements found for this game"), NULL);
 		}
 	}
 }

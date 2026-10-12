@@ -101,6 +101,9 @@ enum {
 
 typedef struct
 {
+	// Interface language: "en" or "ru". Older configurations default to English.
+	char language[3];
+
 	// Theme
 	char fontFile[256];
 	int fontStyle; // 0x00 = TTF_STYLE_NORMAL, 0x01 = TTF_STYLE_BOLD, etc.
@@ -475,6 +478,9 @@ int CFG_getRAProgressNotificationDuration(void);
 void CFG_setRAProgressNotificationDuration(int seconds);
 int CFG_getRAAchievementSortOrder(void);
 void CFG_setRAAchievementSortOrder(int sortOrder);
+
+const char *CFG_getLanguage(void);
+void CFG_setLanguage(const char *language);
 
 void CFG_sync(void);
 void CFG_quit(void);

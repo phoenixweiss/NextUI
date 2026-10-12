@@ -3,6 +3,7 @@
 #include "ma_cheats.h"
 #include "ra_integration.h"
 #include "notification.h"
+#include "i18n.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -50,6 +51,7 @@ static int OptionFrontend_optionChanged(MenuList* list, int i) {
 	return MENU_CALLBACK_NOP;
 }
 static MenuList OptionFrontend_menu = {
+	.localize = true,
 	.type = MENU_VAR,
 	.on_change = OptionFrontend_optionChanged,
 	.items = NULL,
@@ -77,6 +79,7 @@ int OptionFrontend_openMenu(MenuList* list, int i) {
 			Option* option = config.frontend.enabled_options[j];
 			MenuItem* item = &OptionFrontend_menu.items[j];
 			item->key = option->key;
+			item->localize_values = strcmp(option->key, "minarch_overlay") != 0;
 			item->name = option->name;
 			item->desc = option->desc;
 			item->value = option->value;
@@ -110,6 +113,7 @@ static int OptionEmulator_optionDetail(MenuList* list, int i);
 int OptionEmulator_openMenu(MenuList* list, int index);
 
 static MenuList OptionEmulator_menu = {
+    .localize = true,
 	.type = MENU_FIXED,
 	.on_confirm = OptionEmulator_optionDetail, // TODO: this needs pagination to be truly useful
 	.on_change = OptionEmulator_optionChanged,
@@ -140,7 +144,7 @@ static int OptionEmulator_optionDetail(MenuList* list, int i) {
 	}
 	else {
 		Option* option = OptionList_getOption(&config.core, item->key);
-		if (option->full) return Menu_messageWithFont(option->full, (char*[]){ "B","BACK", NULL }, font.medium);
+		if (option->full) return Menu_messageWithFont(option->full, (char*[]){ "B",(char*)I18N_translate("BACK"), NULL }, font.medium);
 		else return MENU_CALLBACK_NOP;
 	}
 }
@@ -204,6 +208,7 @@ int OptionEmulator_openMenu(MenuList* list, int index) {
 		item->desc = option->desc;
 		item->value = option->value;
 		item->values = option->labels;
+        item->localize_values = true;
 	}
 
 	if (cat_count || config.core.enabled_count) {
@@ -216,10 +221,10 @@ int OptionEmulator_openMenu(MenuList* list, int index) {
 	}
 	else {
 		if (list->category) {
-			Menu_message("This category has no options.", (char*[]){ "B","BACK", NULL });
+			Menu_message((char*)I18N_translate("This category has no options."), (char*[]){ "B",(char*)I18N_translate("BACK"), NULL });
 		}
 		else {
-			Menu_message("This core has no options.", (char*[]){ "B","BACK", NULL });
+			Menu_message((char*)I18N_translate("This core has no options."), (char*[]){ "B",(char*)I18N_translate("BACK"), NULL });
 		}
 	}
 
@@ -292,6 +297,7 @@ static MenuList OptionControls_menu = {
 };
 
 int OptionControls_openMenu(MenuList* list, int i) {
+	OptionControls_menu.desc = (char*)I18N_translate("Press A to set and X to clear.\nSupports single button and MENU+button.");
 	LOG_info("OptionControls_openMenu\n");
 
 	if (OptionControls_menu.items==NULL) {
@@ -302,8 +308,8 @@ int OptionControls_openMenu(MenuList* list, int i) {
 
 		if (has_custom_controllers) {
 			MenuItem* item = &OptionControls_menu.items[k++];
-			item->name = "Controller";
-			item->desc = "Select the type of controller.";
+			item->name = (char*)I18N_translate("Controller");
+			item->desc = (char*)I18N_translate("Select the type of controller.");
 			item->value = gamepad_type;
 			item->values = gamepad_labels;
 			item->on_change = OptionControls_optionChanged;
@@ -383,6 +389,7 @@ static int OptionShortcuts_unbind(MenuList* list, int i) {
 	return MENU_CALLBACK_NOP;
 }
 static MenuList OptionShortcuts_menu = {
+	.localize = true,
 	.type = MENU_INPUT,
 	.desc = "Press A to set and X to clear."
 		"\nSupports single button and MENU+button." // TODO: not supported on nano because POWER doubles as MENU
@@ -393,9 +400,9 @@ static MenuList OptionShortcuts_menu = {
 };
 char* getSaveDesc(void) {
 	switch (config.loaded) {
-		case CONFIG_NONE:		return "Using defaults."; break;
-		case CONFIG_CONSOLE:	return "Using console config."; break;
-		case CONFIG_GAME:		return "Using game config."; break;
+		case CONFIG_NONE:		return (char*)I18N_translate("Using defaults."); break;
+		case CONFIG_CONSOLE:	return (char*)I18N_translate("Using console config."); break;
+		case CONFIG_GAME:		return (char*)I18N_translate("Using game config."); break;
 	}
 	return NULL;
 }
@@ -432,26 +439,27 @@ static int OptionSaveChanges_onConfirm(MenuList* list, int i) {
 	switch (i) {
 		case 0: {
 			Config_write(CONFIG_WRITE_ALL);
-			message = "Saved for console.";
+			message = (char*)I18N_translate("Saved for console.");
 			break;
 		}
 		case 1: {
 			Config_write(CONFIG_WRITE_GAME);
-			message = "Saved for game.";
+			message = (char*)I18N_translate("Saved for game.");
 			break;
 		}
 		default: {
 			Config_restore();
-			if (config.loaded) message = "Restored console defaults.";
-			else message = "Restored defaults.";
+			if (config.loaded) message = (char*)I18N_translate("Restored console defaults.");
+			else message = (char*)I18N_translate("Restored defaults.");
 			break;
 		}
 	}
-	Menu_message(message, (char*[]){ "A","OKAY", NULL });
+	Menu_message(message, (char*[]){ "A",(char*)I18N_translate("OKAY"), NULL });
 	OptionSaveChanges_updateDesc();
 	return MENU_CALLBACK_EXIT;
 }
 static MenuList OptionSaveChanges_menu = {
+	.localize = true,
 	.type = MENU_LIST,
 	.on_confirm = OptionSaveChanges_onConfirm,
 	.items = (MenuItem[]){
@@ -480,7 +488,7 @@ static int OptionCheats_optionChanged(MenuList* list, int i) {
 	// Block enabling cheats in RetroAchievements hardcore mode
 	if (RA_isHardcoreModeActive() && item->value) {
 		LOG_info("Cheat enable blocked - hardcore mode active\n");
-		Notification_push(NOTIFICATION_ACHIEVEMENT, "Cheats disabled in Hardcore mode", NULL);
+		Notification_push(NOTIFICATION_ACHIEVEMENT, (char*)I18N_translate("Cheats disabled in Hardcore mode"), NULL);
 		item->value = 0; // Revert the toggle
 		return MENU_CALLBACK_NOP;
 	}
@@ -494,7 +502,7 @@ static int OptionCheats_optionDetail(MenuList* list, int i) {
 	MenuItem* item = &list->items[i];
 	struct Cheat *cheat = &cheatcodes.cheats[i];
 	if (cheat->info)
-		return Menu_message((char*)cheat->info, (char*[]){ "B","BACK", NULL });
+		return Menu_message((char*)cheat->info, (char*[]){ "B",(char*)I18N_translate("BACK"), NULL });
 	else return MENU_CALLBACK_NOP;
 }
 
@@ -589,7 +597,7 @@ int OptionCheats_openMenu(MenuList* list, int i) {
 			}
 		}
 
-		Menu_messageWithFont(cheats_path, (char*[]){ "B","BACK", NULL }, font.small);
+		Menu_messageWithFont(cheats_path, (char*[]){ "B",(char*)I18N_translate("BACK"), NULL }, font.small);
 	}
 
 	return MENU_CALLBACK_NOP;
@@ -646,7 +654,7 @@ static int OptionPragmas_openMenu(MenuList* list, int i) {
 	if (PragmasOptions_menu.items[0].name) {
 		Menu_options(&PragmasOptions_menu);
 	} else {
-		Menu_message("No extra settings found", (char*[]){"B", "BACK", NULL});
+		Menu_message((char*)I18N_translate("No extra settings found"), (char*[]){"B", (char*)I18N_translate("BACK"), NULL});
 	}
 
 	return MENU_CALLBACK_NOP;
@@ -680,6 +688,7 @@ static int OptionShaders_optionChanged(MenuList* list, int i) {
 }
 
 static MenuList ShaderOptions_menu = {
+	.localize = true,
 	.type = MENU_FIXED,
 	.on_confirm = NULL,
 	.on_change = OptionShaders_optionChanged,
@@ -692,7 +701,7 @@ int OptionShaders_openMenu(MenuList* list, int i) {
 
 	// Check if folder read failed or no files found
 	if (!filelist || filecount == 0) {
-		Menu_message("No shaders available\n/Shaders folder or shader files not found", (char*[]){"B", "BACK", NULL});
+		Menu_message((char*)I18N_translate("No shaders available\n/Shaders folder or shader files not found"), (char*[]){"B", (char*)I18N_translate("BACK"), NULL});
 		return MENU_CALLBACK_NOP;
 	}
 
@@ -705,6 +714,7 @@ int OptionShaders_openMenu(MenuList* list, int i) {
 		item->desc = configitem->desc;
 		item->value = configitem->value;
 		item->key = configitem->key;
+		item->localize_values = configitem->labels != NULL;
 		if(i == SH_EXTRASETTINGS) item->on_confirm = OptionPragmas_openMenu;
 
 		if (strcmp(config.shaders.options[i].key, "minarch_shader1") == 0 ||
@@ -721,7 +731,7 @@ int OptionShaders_openMenu(MenuList* list, int i) {
 	if (ShaderOptions_menu.items[0].name) {
 		Menu_options(&ShaderOptions_menu);
 	} else {
-		Menu_message("No shaders available\n/Shaders folder or shader files not found", (char*[]){"B", "BACK", NULL});
+		Menu_message((char*)I18N_translate("No shaders available\n/Shaders folder or shader files not found"), (char*[]){"B", (char*)I18N_translate("BACK"), NULL});
 	}
 
 	return MENU_CALLBACK_NOP;

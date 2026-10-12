@@ -31,6 +31,7 @@ void CFG_defaults(NextUISettings *cfg)
         return;
 
     NextUISettings defaults = {
+        .language = "en",
         .fontFile = CFG_DEFAULT_FONT_FILE,
         .fontStyle = CFG_DEFAULT_FONT_STYLE,
         .color1_255 = CFG_DEFAULT_COLOR1,
@@ -139,6 +140,7 @@ uint32_t CFG_parseHexColor(const char *hexColor)
 // Defined below, alongside the rest of the palette-name accessors.
 static void setPaletteNameRaw(const char *name);
 
+// Loading settings must never rewrite the file through its setters.
 static bool loadingSettings = false;
 
 void CFG_init(FontLoad_callback_t cb, ColorSet_callback_t ccb)
@@ -163,6 +165,13 @@ void CFG_init(FontLoad_callback_t cb, ColorSet_callback_t ccb)
         {
             int temp_value;
             uint32_t temp_color;
+            if (strncmp(line, "language=", 9) == 0)
+            {
+                char *value = line + 9;
+                value[strcspn(value, "\r\n")] = 0;
+                strcpy(settings.language, strcmp(value, "ru") == 0 ? "ru" : "en");
+                continue;
+            }
             if (strncmp(line, "font=", 5) == 0)
             {
                 char *value = line + 5;
@@ -535,7 +544,7 @@ void CFG_init(FontLoad_callback_t cb, ColorSet_callback_t ccb)
     CFG_setColor(6, CFG_getColor(COLOR_HINT));
     CFG_setColor(7, CFG_getColor(COLOR_BACKGROUND));
     // avoid reloading the font if not neccessary
-    if (!fontLoaded)
+    if (!fontLoaded || strcmp(settings.language, "ru") == 0)
         CFG_setFontFile(CFG_getFontFile());
     loadingSettings = false;
 }
@@ -1581,6 +1590,17 @@ void CFG_get(const char *key, char *value)
     }
 }
 
+const char *CFG_getLanguage(void)
+{
+    return strcmp(settings.language, "ru") == 0 ? "ru" : "en";
+}
+
+void CFG_setLanguage(const char *language)
+{
+    strcpy(settings.language, language && strcmp(language, "ru") == 0 ? "ru" : "en");
+    CFG_sync();
+}
+
 void CFG_sync(void)
 {
     if (loadingSettings) return;
@@ -1600,6 +1620,8 @@ void CFG_sync(void)
         printf("[CFG] Unable to open settings file, cant write\n");
         return;
     }
+
+    fprintf(file, "language=%s\n", CFG_getLanguage());
 
     // backward compat: write integer for built-in fonts so existing paks
     // that parse "font=" as an int keep working

@@ -11,6 +11,7 @@
 
 #include "defines.h"
 #include "api.h"
+#include "i18n.h"
 #include "utils.h"
 
 static bool quit = false;
@@ -252,12 +253,12 @@ int main(int argc, char *argv[])
             else {
                 // surface the reason on-screen so it can be diagnosed without pulling logs
                 char msg[MAX_PATH + 32];
-                snprintf(msg, sizeof(msg), "No presets found in\n%s", basepath);
+                snprintf(msg, sizeof(msg), (char*)I18N_translate("No presets found in\n%s"), basepath);
                 GFX_blitMessage(font.small, msg, screen, NULL);
             }
 
-            GFX_blitButtonGroup((char *[]){"L/R", "SCROLL", NULL}, 0, screen, 0);
-            GFX_blitButtonGroup((char *[]){"A", "SET", "B", "BACK", NULL}, 1, screen, 1);
+            GFX_blitButtonGroup((char *[]){"L/R", (char*)I18N_translate("SCROLL"), NULL}, 0, screen, 0);
+            GFX_blitButtonGroup((char *[]){"A", (char*)I18N_translate("SET"), "B", (char*)I18N_translate("BACK"), NULL}, 1, screen, 1);
 
             GFX_flip(screen);
             dirty = 0;
