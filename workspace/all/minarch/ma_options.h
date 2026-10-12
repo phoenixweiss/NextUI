@@ -18,3 +18,7 @@ char   *OptionList_getOptionValue(OptionList *list, const char *key);
 void    OptionList_setOptionValue(OptionList *list, const char *key, const char *value);
 void    OptionList_setOptionRawValue(OptionList *list, const char *key, int value);
 void    OptionList_setOptionVisibility(OptionList *list, const char *key, int visible);
+
+// Overlay display metadata from the core's selected language.
+void OptionList_localize(const struct retro_core_option_definition *defs);
+void OptionList_v2_localize(const struct retro_core_options_v2 *defs);

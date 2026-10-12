@@ -33,6 +33,53 @@ static const char* getOptionNameFromKey(const char* key, const char* name) {
 }
 
 // the following 3 functions always touch config.core, the rest can operate on arbitrary OptionLists
+// Localized metadata never replaces canonical keys, values or defaults.
+static void localizeOption(Option *item, const char *name, const char *info,
+    const struct retro_core_option_value *values)
+{
+    if (name && *name) { free(item->name); item->name = strdup(name); }
+    if (info && *info) {
+        free(item->desc); free(item->full);
+        item->desc = strdup(info); item->full = strdup(info);
+        GFX_wrapText(font.tiny, item->desc, DEVICE_WIDTH - SCALE1(2*PADDING), 2);
+        GFX_wrapText(font.medium, item->full, DEVICE_WIDTH - SCALE1(2*PADDING), 16);
+    }
+    for (int j = 0; j < item->count; ++j) {
+        for (int k = 0; values && values[k].value; ++k) {
+            if (strcmp(item->values[j], values[k].value) == 0 && values[k].label && *values[k].label) {
+                if (item->labels[j] != item->values[j]) free(item->labels[j]);
+                item->labels[j] = strdup(values[k].label);
+                break;
+            }
+        }
+    }
+}
+void OptionList_localize(const struct retro_core_option_definition *defs)
+{
+    for (int i = 0; defs && defs[i].key; ++i)
+        for (int j = 0; j < config.core.count; ++j)
+            if (strcmp(config.core.options[j].key, defs[i].key) == 0)
+                localizeOption(&config.core.options[j], defs[i].desc, defs[i].info, defs[i].values);
+}
+void OptionList_v2_localize(const struct retro_core_options_v2 *defs)
+{
+    if (!defs) return;
+    for (int i = 0; defs->definitions && defs->definitions[i].key; ++i) {
+        const struct retro_core_option_v2_definition *d = &defs->definitions[i];
+        for (int j = 0; j < config.core.count; ++j)
+            if (strcmp(config.core.options[j].key, d->key) == 0)
+                localizeOption(&config.core.options[j], d->desc_categorized ? d->desc_categorized : d->desc,
+                    d->info_categorized ? d->info_categorized : d->info, d->values);
+    }
+    for (int i = 0; defs->categories && defs->categories[i].key; ++i)
+        for (int j = 0; config.core.categories && config.core.categories[j].key; ++j) {
+            OptionCategory *c = &config.core.categories[j];
+            if (strcmp(c->key, defs->categories[i].key) != 0) continue;
+            if (defs->categories[i].desc) { free(c->desc); c->desc = strdup(defs->categories[i].desc); }
+            if (defs->categories[i].info) { free(c->info); c->info = strdup(defs->categories[i].info); }
+        }
+}
+
 void OptionList_init(const struct retro_core_option_definition *defs) {
 	LOG_info("OptionList_init\n");
 	int count;

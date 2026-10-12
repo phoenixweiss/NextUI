@@ -208,7 +208,7 @@ bool environment_callback(unsigned cmd, void *data) { // copied from picoarch in
 	}
 	case RETRO_ENVIRONMENT_GET_LANGUAGE: { /* 39 */
 		// puts("RETRO_ENVIRONMENT_GET_LANGUAGE");
-		if (data) *(int *) data = RETRO_LANGUAGE_ENGLISH;
+		if (data) *(int *) data = strcmp(CFG_getLanguage(), "ru") == 0 ? RETRO_LANGUAGE_RUSSIAN : RETRO_LANGUAGE_ENGLISH;
 		break;
 	}
 	case RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER: { /* (40 | RETRO_ENVIRONMENT_EXPERIMENTAL) */
@@ -259,6 +259,7 @@ bool environment_callback(unsigned cmd, void *data) { // copied from picoarch in
 		if (options && options->us) {
 			OptionList_reset();
 			OptionList_init(options->us);
+            if (strcmp(CFG_getLanguage(), "ru") == 0) OptionList_localize(options->local);
 			Config_readOptions();
 		}
 		break;
@@ -339,6 +340,7 @@ bool environment_callback(unsigned cmd, void *data) { // copied from picoarch in
 			if (intl && intl->us) {
 				OptionList_reset();
 				OptionList_v2_init(intl->us);
+                if (strcmp(CFG_getLanguage(), "ru") == 0) OptionList_v2_localize(intl->local);
 				Config_readOptions();
 			}
 		}

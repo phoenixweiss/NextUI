@@ -154,6 +154,57 @@ int main(void) {
                 for key in re.findall(r'I18N_translate\((' + literal + r')\)', path.read_text()):
                     self.assertIn(json.loads(key), catalog, str(path))
 
+    def test_native_core_translation_keeps_canonical_values(self):
+        options = (ROOT / "workspace/all/minarch/ma_options.c").read_text()
+        helper = options[options.index("static void localizeOption("):options.index("void OptionList_init(")]
+        source = r'''
+#include "ma_internal.h"
+#include <assert.h>
+struct Config config = {0};
+GFX_Fonts font = {0};
+int DEVICE_WIDTH=720;
+int panel_w=720, panel_h=480, hdmi_active=0;
+int GFX_wrapText(TTF_Font *f, char *s, int w, int n) { (void)f;(void)s;(void)w;(void)n;return 0; }
+''' + helper + r'''
+int main(void) {
+    char *values[] = {strdup("disabled"),strdup("enabled"),NULL};
+    char *labels[] = {values[0],strdup("Enabled"),NULL};
+    Option option = {.key=strdup("core_test"),.name=strdup("English name"),
+        .desc=strdup("English help"),.full=strdup("English help"),
+        .count=2,.value=1,.default_value=0,.values=values,.labels=labels};
+    config.core.count=1;config.core.options=&option;
+    struct retro_core_option_definition local[] = {
+        {.key="core_test",.desc="Русское имя",.info=NULL,
+         .values={{"enabled","Включено"},{"wrong_key","Wrong translation"},{NULL,NULL}}},
+        {.key="missing_option",.desc="Не добавлять"},{0}};
+    OptionList_localize(local);
+    assert(strcmp(option.name,"Русское имя")==0);
+    assert(strcmp(option.desc,"English help")==0);
+    assert(strcmp(option.key,"core_test")==0 && option.value==1 && option.default_value==0);
+    assert(strcmp(values[1],"enabled")==0 && strcmp(labels[1],"Включено")==0);
+    assert(labels[0]==values[0]);
+    OptionCategory cats[]={{strdup("video"),strdup("Video"),NULL},{0}};
+    config.core.categories=cats;
+    struct retro_core_option_v2_definition defs[] = {
+        {.key="core_test",.desc="Имя v2",.info="Описание",.values={{"disabled","Выключено"},{0}}},{0}};
+    struct retro_core_option_v2_category localized_cats[]={{"video","Изображение",NULL},{0}};
+    struct retro_core_options_v2 v2={localized_cats,defs};
+    OptionList_v2_localize(&v2);
+    assert(strcmp(option.name,"Имя v2")==0 && strcmp(option.full,"Описание")==0);
+    assert(strcmp(cats[0].key,"video")==0 && strcmp(cats[0].desc,"Изображение")==0);
+    assert(strcmp(labels[0],"Выключено")==0 && strcmp(values[0],"disabled")==0);
+    OptionList_localize(NULL);OptionList_v2_localize(NULL);
+    free(option.key);free(option.name);free(option.desc);free(option.full);
+    free(labels[0]);free(labels[1]);free(values[0]);free(values[1]);free(cats[0].key);free(cats[0].desc);
+    puts("Core metadata: v1/v2 localization, partial fallback, canonical IDs and defaults preserved.");
+}
+'''
+        flags = ["-DUSE_SDL2", "-DPLATFORM=\"h700\"", "-I"+str(ROOT/"workspace/h700/platform"),
+                 "-I"+str(ROOT/"workspace/all/minarch"),
+                 "-I"+str(ROOT/"workspace/all/minarch/libretro-common/include")]
+        flags += shlex.split(os.environ["I18N_SDL_FLAGS"])
+        self.compile_and_run(source, flags=[*flags, "-fsanitize=address,undefined"])
+
     def test_actual_description_helpers_with_long_utf8_lines(self):
         if sys.platform == "darwin":
             self.skipTest("Use the isolated Linux container for SDL checks.")
